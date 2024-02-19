@@ -40,6 +40,18 @@ def extract_images_from_videos(folder_path, output_folder):
 
 
 # Specify folder containing videos and output folder for extracted images
-input_folder = r'C:\HOFI_training_videos'
-output_folder = r'C:\image_from_video'
-extract_images_from_videos(input_folder, output_folder)
+folder_origin = input("Please specify the full path to the videos: ")
+folder_dest = input("Please specify the full path to an output folder: ")
+
+while True:
+    try:
+        print(os.listdir(folder_origin))
+        break
+
+    except:
+        print("\n")
+        folder_origin = input("The location you specified does not exist, please try again: ")
+
+# input_folder = r'C:\HOFI_training_videos'
+# output_folder = r'C:\image_from_video'
+extract_images_from_videos(folder_origin, folder_dest)
