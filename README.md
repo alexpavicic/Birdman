@@ -12,6 +12,26 @@ or
 
 
 # Training:
+
+Before you start training, head over to "YOLOv7/data" and edit the r-train.py.
+
+You will need to specify the paths for:
+
+      source_images_dir = '/data/Imgs'
+      source_labels_dir = '/data/Labl'
+      train_images_dir = '/data/train/images'
+      train_labels_dir = '/data/train/labels'
+      val_images_dir = '/data/val/images'
+      val_labels_dir = '/data/val/labels'
+
+
+Save the file and then run:
+
+      python3 r-train.py
+
+This will take images from "/data/Imgs" and their respective labels from "/data/Labl" and split them randomly for 70-30 for training and validation. 
+Re-running this script will clear our the images in "/data/train/images" and "/data/val/images" and the labels in "/data/train/labels" and "/data/val/labels" and resplit the data randomly again.
+
 Run this command or modify it to your computing ability:
 
       python3 train.py --workers 1 --device 0 --batch-size 10 --epochs 100 --img 640 360 --data data/house_finch_v0.yaml --hyp data/hyp.scratch.custom.yaml --cfg cfg/training/yolo_house_finch_v0.yaml --name *give_name* --weights weights/*your_weight*.pt
