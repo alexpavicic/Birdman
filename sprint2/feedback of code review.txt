@@ -1,0 +1,3 @@
+Feedback from Precious Jones to Cheng Yang
+no suggestion, the code is clear, it is easy to read.the code is well organized.  
+The files be reviewd: get_image_from_video.py, test.py
