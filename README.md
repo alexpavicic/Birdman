@@ -1,6 +1,7 @@
 # Running Birdman's YOLOv7:
 
 ## Pre-Requisite:
+Create a python virtual environment for better version control
 With python, install the requirements within the YOLOv7/requirements.txt file:
 
       pip install -r requirements.txt
