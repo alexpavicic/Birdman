@@ -25,7 +25,7 @@
 
 storage.googleapis.com
 runs/*
-data/*
+# data/*
 data/images/*
 !data/*.yaml
 !data/hyps
@@ -73,14 +73,14 @@ yolov3-tiny.conv.15
 # GitHub Python GitIgnore ----------------------------------------------------------------------------------------------
 # Byte-compiled / optimized / DLL files
 __pycache__/
-*.py[cod]
-*$py.class
+# *.py[cod]
+# *$py.class
 
 # C extensions
 *.so
 
 # Distribution / packaging
-.Python
+# .Python
 env/
 build/
 develop-eggs/
