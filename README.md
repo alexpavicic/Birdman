@@ -9,6 +9,13 @@ or
 
       python3 -m pip install -r requirements.txt
 
+Also install scikit-learn with:
+
+      pip install scikit-learn
+
+or 
+
+      python3 -m pip install scikit-learn
 
 # Training:
 Run this command or modify it to your computing ability:
