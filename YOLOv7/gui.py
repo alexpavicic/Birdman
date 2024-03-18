@@ -3,12 +3,13 @@ from tkinter import filedialog
 import os
 from datetime import datetime
 import cv2
+import subprocess
+from pathlib import Path
 
 class ObjectDetectionApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Object Detection Tool")
-        self.uploaded_filename = ""  # Initialize an instance variable to store the uploaded filename
 
         # Upload Video button
         self.upload_button = tk.Button(self.root, text="Upload Video", command=self.upload_video)
@@ -33,6 +34,9 @@ class ObjectDetectionApp:
         self.maybe_folder.pack(side="left", padx=10)
         self.create_folder_ui(self.maybe_folder, "Maybe")
 
+        # Video/Image source:
+        self.filename = None
+
     # Create UI elements for each folder
     def create_folder_ui(self, parent, folder_name):
         # Label for folder name
@@ -52,13 +56,23 @@ class ObjectDetectionApp:
 
     # Function to upload video file
     def upload_video(self):
-        self.uploaded_filename = filedialog.askopenfilename(filetypes=[("Video Files", "*.mp4")])  # Store the uploaded filename
-        detected_objects = self.perform_object_detection(self.uploaded_filename)
-        self.update_ui(detected_objects)
+        filename = filedialog.askopenfilename(filetypes=[("Video Files", "*.mp4")])
+        if filename:
+            current_directory = os.getcwd()
+            
+            # Convert the absolute path to a relative path
+            relative_path = os.path.relpath(filename, current_directory)
+            
+            print("Absolute path:", filename)
+            print("Relative path:", relative_path)
+
+        print(filename)
+        detected_objects = self.run_detection(relative_path)
+        print("Success")
+        # self.update_ui(detected_objects)
 
     # Placeholder for object detection logic
     def perform_object_detection(self, filename):
-        print(f"File name:{filename}")
         # Replace this with your actual object detection code
         # For simplicity, returning a list of detected objects with class and timestamp
         detected_objects = [("Bird", "2024-02-21 12:00:00"), ("House Finch", "2024-02-21 12:05:00")]
@@ -93,8 +107,31 @@ class ObjectDetectionApp:
                     os.makedirs(destination_folder)
                 print(f"Moving {selected_item} to {destination_folder}")
 
+    def run_detection(self, video_path):
+        detect_script_path = 'detect.py'
+        weights_path = 'weights/best_v5.pt'
+
+        video_path = video_path
+
+        # detect.py needs arguments
+        command = [
+            'python3', detect_script_path,
+            '--weights', weights_path,
+            '--conf', '0.5',
+            '--img-size', '640',
+            '--source', video_path,
+            '--no-trace',
+            '--save-txt',
+            '--save-conf',
+            '--project', 'Results/Detect',
+            '--name', 'Runs'
+        ]
+
+        # Execute the command
+        subprocess.run(command)
+
+
 if __name__ == "__main__":
     root = tk.Tk()
     app = ObjectDetectionApp(root)
     root.mainloop()
-
