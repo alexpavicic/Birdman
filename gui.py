@@ -8,6 +8,7 @@ class ObjectDetectionApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Object Detection Tool")
+        self.uploaded_filename = ""  # Initialize an instance variable to store the uploaded filename
 
         # Upload Video button
         self.upload_button = tk.Button(self.root, text="Upload Video", command=self.upload_video)
@@ -51,12 +52,13 @@ class ObjectDetectionApp:
 
     # Function to upload video file
     def upload_video(self):
-        filename = filedialog.askopenfilename(filetypes=[("Video Files", "*.mp4")])
-        detected_objects = self.perform_object_detection(filename)
+        self.uploaded_filename = filedialog.askopenfilename(filetypes=[("Video Files", "*.mp4")])  # Store the uploaded filename
+        detected_objects = self.perform_object_detection(self.uploaded_filename)
         self.update_ui(detected_objects)
 
     # Placeholder for object detection logic
     def perform_object_detection(self, filename):
+        print(f"File name:{filename}")
         # Replace this with your actual object detection code
         # For simplicity, returning a list of detected objects with class and timestamp
         detected_objects = [("Bird", "2024-02-21 12:00:00"), ("House Finch", "2024-02-21 12:05:00")]
@@ -95,3 +97,4 @@ if __name__ == "__main__":
     root = tk.Tk()
     app = ObjectDetectionApp(root)
     root.mainloop()
+
