@@ -1,10 +1,9 @@
 import tkinter as tk
 from tkinter import filedialog
 import os
+import subprocess
 from datetime import datetime
 import cv2
-import subprocess
-from pathlib import Path
 
 class ObjectDetectionApp:
     def __init__(self, root):
