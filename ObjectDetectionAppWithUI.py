@@ -1,14 +1,15 @@
 import tkinter as tk
 from tkinter import filedialog
 import os
-import subprocess
 from datetime import datetime
+import subprocess
 import cv2
 
 class ObjectDetectionApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Object Detection Tool")
+        self.uploaded_filename = ""  # Initialize an instance variable to store the uploaded filename
 
         # Upload Video button
         self.upload_button = tk.Button(self.root, text="Upload Video", command=self.upload_video)
@@ -55,27 +56,58 @@ class ObjectDetectionApp:
 
     # Function to upload video file
     def upload_video(self):
-        filename = filedialog.askopenfilename(filetypes=[("Video Files", "*.mp4")])
-        if filename:
+        self.uploaded_filename = filedialog.askopenfilename(filetypes=[("Video Files", "*.mp4")])  # Store the uploaded filename
+        print(f'{type(self.uploaded_filename)}, {self.uploaded_filename}')
+
+        if self.uploaded_filename:
+
             current_directory = os.getcwd()
             
             # Convert the absolute path to a relative path
-            relative_path = os.path.relpath(filename, current_directory)
+            relative_path = os.path.relpath(self.uploaded_filename, current_directory)
             
-            print("Absolute path:", filename)
+            print("Absolute path:", self.uploaded_filename)
             print("Relative path:", relative_path)
 
-        print(filename)
-        detected_objects = self.run_detection(relative_path)
+        print(self.uploaded_filename)
+
+        # detected_objects = self.perform_object_detection(relative_path)
+        detected_objects = self.perform_object_detection(self.uploaded_filename)
         print("Success")
-        # self.update_ui(detected_objects)
+        self.update_ui(detected_objects)
 
     # Placeholder for object detection logic
     def perform_object_detection(self, filename):
+        print(f"File name:{filename}")
         # Replace this with your actual object detection code
         # For simplicity, returning a list of detected objects with class and timestamp
-        detected_objects = [("Bird", "2024-02-21 12:00:00"), ("House Finch", "2024-02-21 12:05:00")]
-        return detected_objects
+        # detected_objects = [("Bird", "2024-02-21 12:00:00"), ("House Finch", "2024-02-21 12:05:00")]
+        # return detected_objects
+
+        # Save the current working directory
+        original_cwd = os.getcwd()
+
+        # Change the working directory to YOLOv7
+        os.chdir('YOLOv7')
+
+        try:
+            # Now paths in detect.py will be relative to YOLOv7
+            command = [
+                'python3', 'detect.py',
+                '--weights', 'weights/best_v5.pt',
+                '--conf', '0.5',
+                '--img-size', '640',
+                '--source', filename,  # Assuming filename is an absolute path
+                '--no-trace',
+                '--save-txt',
+                '--save-conf',
+                '--project', 'Results/Detect',
+                '--name', 'Runs'
+            ]
+            subprocess.run(command, check=True)
+        finally:
+            # Change back to the original directory
+            os.chdir(original_cwd)
 
     # Update UI with detected objects
     def update_ui(self, detected_objects):
@@ -106,31 +138,8 @@ class ObjectDetectionApp:
                     os.makedirs(destination_folder)
                 print(f"Moving {selected_item} to {destination_folder}")
 
-    def run_detection(self, video_path):
-        detect_script_path = 'detect.py'
-        weights_path = 'weights/best_v5.pt'
-
-        video_path = video_path
-
-        # detect.py needs arguments
-        command = [
-            'python3', detect_script_path,
-            '--weights', weights_path,
-            '--conf', '0.5',
-            '--img-size', '640',
-            '--source', video_path,
-            '--no-trace',
-            '--save-txt',
-            '--save-conf',
-            '--project', 'Results/Detect',
-            '--name', 'Runs'
-        ]
-
-        # Execute the command
-        subprocess.run(command)
-
-
 if __name__ == "__main__":
     root = tk.Tk()
     app = ObjectDetectionApp(root)
     root.mainloop()
+
