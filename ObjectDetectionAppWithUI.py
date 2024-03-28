@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import filedialog
 import os
 from datetime import datetime
+import subprocess
 import cv2
 
 class ObjectDetectionApp:
@@ -33,6 +34,9 @@ class ObjectDetectionApp:
         self.maybe_folder.pack(side="left", padx=10)
         self.create_folder_ui(self.maybe_folder, "Maybe")
 
+        # Video/Image source:
+        self.filename = None
+
     # Create UI elements for each folder
     def create_folder_ui(self, parent, folder_name):
         # Label for folder name
@@ -53,7 +57,23 @@ class ObjectDetectionApp:
     # Function to upload video file
     def upload_video(self):
         self.uploaded_filename = filedialog.askopenfilename(filetypes=[("Video Files", "*.mp4")])  # Store the uploaded filename
+        print(f'{type(self.uploaded_filename)}, {self.uploaded_filename}')
+
+        if self.uploaded_filename:
+
+            current_directory = os.getcwd()
+            
+            # Convert the absolute path to a relative path
+            relative_path = os.path.relpath(self.uploaded_filename, current_directory)
+            
+            print("Absolute path:", self.uploaded_filename)
+            print("Relative path:", relative_path)
+
+        print(self.uploaded_filename)
+
+        # detected_objects = self.perform_object_detection(relative_path)
         detected_objects = self.perform_object_detection(self.uploaded_filename)
+        print("Success")
         self.update_ui(detected_objects)
 
     # Placeholder for object detection logic
@@ -61,8 +81,33 @@ class ObjectDetectionApp:
         print(f"File name:{filename}")
         # Replace this with your actual object detection code
         # For simplicity, returning a list of detected objects with class and timestamp
-        detected_objects = [("Bird", "2024-02-21 12:00:00"), ("House Finch", "2024-02-21 12:05:00")]
-        return detected_objects
+        # detected_objects = [("Bird", "2024-02-21 12:00:00"), ("House Finch", "2024-02-21 12:05:00")]
+        # return detected_objects
+
+        # Save the current working directory
+        original_cwd = os.getcwd()
+
+        # Change the working directory to YOLOv7
+        os.chdir('YOLOv7')
+
+        try:
+            # Now paths in detect.py will be relative to YOLOv7
+            command = [
+                'python3', 'detect.py',
+                '--weights', 'weights/best_v5.pt',
+                '--conf', '0.5',
+                '--img-size', '640',
+                '--source', filename,  # Assuming filename is an absolute path
+                '--no-trace',
+                '--save-txt',
+                '--save-conf',
+                '--project', 'Results/Detect',
+                '--name', 'Runs'
+            ]
+            subprocess.run(command, check=True)
+        finally:
+            # Change back to the original directory
+            os.chdir(original_cwd)
 
     # Update UI with detected objects
     def update_ui(self, detected_objects):
