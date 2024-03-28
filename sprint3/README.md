@@ -23,3 +23,7 @@
 
 ## Sprint  Progress
 - 1 - Completed, Team decided to use the Tkinter library
+- 2 - Completed
+- 3 - Completed
+- 4 - Completed
+- 5 - Completed
