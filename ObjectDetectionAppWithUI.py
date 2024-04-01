@@ -5,73 +5,77 @@ from datetime import datetime
 import subprocess
 import cv2
 
+
 class ObjectDetectionApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Object Detection Tool")
-        self.uploaded_filename = ""  # Initialize an instance variable to store the uploaded filename
+        self.root.geometry("800x500")  # Set initial window size
+
+        # Set background color
+        self.root.configure(bg="#f0f0f0")
+
+        # Create a main frame
+        self.main_frame = tk.Frame(self.root, bg="#f0f0f0")  # Set background color
+        self.main_frame.pack(expand=True, fill=tk.BOTH, padx=10, pady=10)
 
         # Upload Video button
-        self.upload_button = tk.Button(self.root, text="Upload Video", command=self.upload_video)
-        self.upload_button.pack()
+        self.upload_button = tk.Button(self.main_frame, text="Upload Video", command=self.upload_video, bg="#4CAF50",
+                                       fg="white", font=("Helvetica", 12, "bold"), relief=tk.RAISED)
+        self.upload_button.pack(pady=10)
 
         # Detected Objects section
-        self.detected_objects_frame = tk.Frame(self.root)
-        self.detected_objects_frame.pack(pady=10)
+        self.detected_objects_frame = tk.Frame(self.main_frame, bg="#f0f0f0")  # Set background color
+        self.detected_objects_frame.pack(expand=True, fill=tk.BOTH, pady=10)
 
-        # Frame for Bird folder
-        self.bird_folder = tk.Frame(self.detected_objects_frame)
-        self.bird_folder.pack(side="left", padx=10)
-        self.create_folder_ui(self.bird_folder, "Bird")
-
-        # Frame for House Finch folder
-        self.house_finch_folder = tk.Frame(self.detected_objects_frame)
-        self.house_finch_folder.pack(side="left", padx=10)
-        self.create_folder_ui(self.house_finch_folder, "House Finch")
-
-        # Frame for Maybe folder
-        self.maybe_folder = tk.Frame(self.detected_objects_frame)
-        self.maybe_folder.pack(side="left", padx=10)
-        self.create_folder_ui(self.maybe_folder, "Maybe")
+        # Create frames for each folder
+        self.create_folder_ui(self.detected_objects_frame, "Bird")
+        self.create_folder_ui(self.detected_objects_frame, "House Finch")
+        self.create_folder_ui(self.detected_objects_frame, "Maybe")
 
         # Video/Image source:
         self.filename = None
 
     # Create UI elements for each folder
     def create_folder_ui(self, parent, folder_name):
-        # Label for folder name
-        label = tk.Label(parent, text=folder_name)
-        label.pack()
+        folder_frame = tk.LabelFrame(parent, text=folder_name, bg="#f0f0f0", relief=tk.GROOVE)
+        folder_frame.pack(side="left", padx=10, pady=10, fill=tk.BOTH, expand=True)
+
         # Listbox to display detected objects
-        images_listbox = tk.Listbox(parent, width=20, height=10)
-        images_listbox.pack()
+        images_listbox = tk.Listbox(folder_frame, width=30, height=15)
+        images_listbox.pack(pady=5, padx=5, fill=tk.BOTH, expand=True)
+
+        # Scrollbar for the listbox
+        scrollbar = tk.Scrollbar(folder_frame, orient="vertical")
+        scrollbar.config(command=images_listbox.yview)
+        scrollbar.pack(side="right", fill="y")
+
+        images_listbox.config(yscrollcommand=scrollbar.set)
 
         # Delete button to remove selected item from listbox
-        delete_button = tk.Button(parent, text="Delete", command=lambda: self.delete_image(images_listbox))
+        delete_button = tk.Button(folder_frame, text="Delete", command=lambda: self.delete_image(images_listbox),
+                                  bg="#f44336", fg="white", font=("Helvetica", 10, "bold"), relief=tk.RAISED)
         delete_button.pack(pady=5)
 
         # Move button to move selected item to another folder
-        move_button = tk.Button(parent, text="Move to Other Folder", command=lambda: self.move_image(images_listbox))
-        move_button.pack()
+        move_button = tk.Button(folder_frame, text="Move to Other Folder",
+                                command=lambda: self.move_image(images_listbox), bg="#008CBA", fg="white",
+                                font=("Helvetica", 10, "bold"), relief=tk.RAISED)
+        move_button.pack(pady=5)
 
     # Function to upload video file
     def upload_video(self):
-        self.uploaded_filename = filedialog.askopenfilename(filetypes=[("Video Files", "*.mp4")])  # Store the uploaded filename
+        self.uploaded_filename = filedialog.askopenfilename(
+            filetypes=[("Video Files", "*.mp4")])  # Store the uploaded filename
         print(f'{type(self.uploaded_filename)}, {self.uploaded_filename}')
 
         if self.uploaded_filename:
-
             current_directory = os.getcwd()
-            
-            # Convert the absolute path to a relative path
             relative_path = os.path.relpath(self.uploaded_filename, current_directory)
-            
             print("Absolute path:", self.uploaded_filename)
             print("Relative path:", relative_path)
 
-        print(self.uploaded_filename)
-
-        # detected_objects = self.perform_object_detection(relative_path)
+        # Perform object detection
         detected_objects = self.perform_object_detection(self.uploaded_filename)
         print("Success")
         self.update_ui(detected_objects)
@@ -138,8 +142,8 @@ class ObjectDetectionApp:
                     os.makedirs(destination_folder)
                 print(f"Moving {selected_item} to {destination_folder}")
 
+
 if __name__ == "__main__":
     root = tk.Tk()
     app = ObjectDetectionApp(root)
     root.mainloop()
-
