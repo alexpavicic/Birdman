@@ -107,6 +107,6 @@ Description:
 
 After testing, head over to "YOLOv7/runs/detect" (assuming default location) to see the results more accurately, using the "--view_img" flag also shows the results live. 
 # Graphical user interface
-Run the ObjectDetectionAppWithUI.py to launch the GUI
-Click the Upload Video button to select a video to use for test
-It will do the prediction and output a result video and a folder of text labels in the result folder
+- Run the ObjectDetectionAppWithUI.py to launch the GUI.
+- Click the Upload Video button to select a video to use for testing.
+- It will do the prediction and output a result video and a folder of text labels in the result folder.
