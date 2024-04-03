@@ -102,7 +102,8 @@ class ObjectDetectionApp:
     # Extract frames from video and save along with text labels
     # Extract frames from video and save along with text labels
     def extract_frames_with_labels(self):
-        video_capture = cv2.VideoCapture(self.uploaded_filename)
+        output_video_path = os.path.join("YOLOv7", "Results", "Detect", "Runs", f"{os.path.splitext(os.path.basename(self.uploaded_filename))[0]}.mp4")
+        video_capture = cv2.VideoCapture(output_video_path)
         success, frame = video_capture.read()
         frame_count = 0
 
