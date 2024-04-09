@@ -25,6 +25,7 @@
 
 storage.googleapis.com
 Results/*
+../Results/Detected_Objects/*
 data/images/*
 !data/*.yaml
 !data/hyps
