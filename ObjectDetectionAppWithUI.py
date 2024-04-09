@@ -34,6 +34,9 @@ class ObjectDetectionApp:
         # Video/Image source:
         self.uploaded_filename = None
 
+        # Base working directory
+        self.base_directory = os.getcwd()
+
     # Create UI elements for each folder
     def create_folder_ui(self, parent, folder_name):
         folder_frame = tk.LabelFrame(parent, text=folder_name, bg="#f0f0f0", relief=tk.GROOVE)
@@ -70,9 +73,6 @@ class ObjectDetectionApp:
 
     # Perform object detection
     def perform_object_detection(self):
-        # Save the current working directory
-        original_cwd = os.getcwd()
-
         # Change the working directory to YOLOv7
         os.chdir('YOLOv7')
 
@@ -93,18 +93,17 @@ class ObjectDetectionApp:
             subprocess.run(command, check=True)
         finally:
             # Change back to the original directory
-            os.chdir(original_cwd)
+            os.chdir(self.base_directory)
 
         # Extract frames and save along with text labels
         self.extract_frames_with_labels()
 
     # Extract frames from video and save along with text labels
-    # Extract frames from video and save along with text labels
-    # Extract frames from video and save along with text labels
     def extract_frames_with_labels(self):
         output_video_path = os.path.join("YOLOv7", "Results", "Detect", "Runs", f"{os.path.splitext(os.path.basename(self.uploaded_filename))[0]}.mp4")
         video_capture = cv2.VideoCapture(output_video_path)
         success, frame = video_capture.read()
+        dest_directory = os.path.join(self.base_directory, "Results")
         frame_count = 0
 
         while success:
@@ -126,16 +125,22 @@ class ObjectDetectionApp:
                         class_name = self.get_class_name(class_id)  # Get class name based on class id
 
                         if class_name:
-                            destination_folder = os.path.join("Results", "Detected_Objects", class_name)
+                            destination_folder = os.path.join(dest_directory, "Detected_Objects", class_name)
                             if not os.path.exists(destination_folder):
                                 os.makedirs(destination_folder, exist_ok=True)
                             # Check if frame file exists before moving
                             if os.path.exists(frame_filename):
                                 os.rename(frame_filename, os.path.join(destination_folder, frame_filename))
-                            else:
-                                print(f" {frame_filename}")
+
+
+            # the condition where the model didn't identify class
             else:
-                print(f"{frame_filename}")
+                destination_folder = os.path.join(dest_directory, "Detected_Objects", "Unknown")
+                if not os.path.exists(destination_folder):
+                    os.makedirs(destination_folder, exist_ok=True)
+                # Check if frame file exists before moving
+                if os.path.exists(frame_filename):
+                    os.rename(frame_filename, os.path.join(destination_folder, frame_filename))
 
             success, frame = video_capture.read()
 
