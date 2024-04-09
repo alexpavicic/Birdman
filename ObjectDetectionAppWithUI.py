@@ -33,6 +33,8 @@ class ObjectDetectionApp:
 
         # Video/Image source:
         self.uploaded_filename = None
+
+        # Base working directory
         self.base_directory = os.getcwd()
 
     # Create UI elements for each folder
@@ -123,7 +125,6 @@ class ObjectDetectionApp:
                         class_name = self.get_class_name(class_id)  # Get class name based on class id
 
                         if class_name:
-
                             destination_folder = os.path.join(dest_directory, "Detected_Objects", class_name)
                             if not os.path.exists(destination_folder):
                                 os.makedirs(destination_folder, exist_ok=True)
@@ -132,15 +133,6 @@ class ObjectDetectionApp:
                                 os.rename(frame_filename, os.path.join(destination_folder, frame_filename))
 
 
-                        """
-                        else:
-                            destination_folder = os.path.join(dest_directory, "Detected_Objects", "UnKnown")
-                            if not os.path.exists(destination_folder):
-                                os.makedirs(destination_folder, exist_ok=True)
-                            # Check if frame file exists before moving
-                            if os.path.exists(frame_filename):
-                                os.rename(frame_filename, os.path.join(destination_folder, frame_filename))
-                        """
             # the condition where the model didn't identify class
             else:
                 destination_folder = os.path.join(dest_directory, "Detected_Objects", "Unknown")
