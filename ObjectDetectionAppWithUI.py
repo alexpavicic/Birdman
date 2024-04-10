@@ -1,16 +1,14 @@
 import tkinter as tk
-from tkinter import filedialog
+from tkinter import filedialog, messagebox
 import os
-import subprocess
 import cv2
+import subprocess
 
 class ObjectDetectionApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Object Detection Tool")
         self.root.geometry("900x600")  # Set initial window size
-
-        # Set background color
         self.root.configure(bg="#f0f0f0")
 
         # Create a main frame
@@ -27,9 +25,8 @@ class ObjectDetectionApp:
         self.detected_objects_frame.pack(expand=True, fill=tk.BOTH, pady=10)
 
         # Create frames for each folder
-        self.create_folder_ui(self.detected_objects_frame, "Bird")
-        self.create_folder_ui(self.detected_objects_frame, "House Finch")
-        self.create_folder_ui(self.detected_objects_frame, "Maybe")
+        self.create_folder_ui(self.detected_objects_frame, "Male House Finch")
+        self.create_folder_ui(self.detected_objects_frame, "Female House Finch")
 
         # Video/Image source:
         self.uploaded_filename = None
@@ -53,7 +50,7 @@ class ObjectDetectionApp:
         images_listbox.config(yscrollcommand=scrollbar.set)
 
         # Delete button to remove selected item from listbox
-        delete_button = tk.Button(folder_frame, text="Delete", command=lambda: self.delete_image(images_listbox),
+        delete_button = tk.Button(folder_frame, text="Delete", command=lambda: self.delete_image(images_listbox, folder_name),
                                   bg="#f44336", fg="white", font=("Helvetica", 10, "bold"), relief=tk.RAISED)
         delete_button.pack(pady=5)
 
@@ -62,6 +59,9 @@ class ObjectDetectionApp:
                                 command=lambda: self.move_image(images_listbox), bg="#008CBA", fg="white",
                                 font=("Helvetica", 10, "bold"), relief=tk.RAISED)
         move_button.pack(pady=5)
+
+        # Store the Listbox reference
+        setattr(self, f"{folder_name.lower().replace(' ', '_')}_listbox", images_listbox)
 
     # Function to upload video file
     def upload_video(self):
@@ -95,11 +95,13 @@ class ObjectDetectionApp:
             # Change back to the original directory
             os.chdir(self.base_directory)
 
-        # Extract frames and save along with text labels
-        self.extract_frames_with_labels()
+        # After object detection, extract frames and update UI
+        self.extract_frames_with_labels(self.update_ui)
 
     # Extract frames from video and save along with text labels
-    def extract_frames_with_labels(self):
+
+    def extract_frames_with_labels(self, callback=None):
+
         output_video_path = os.path.join("YOLOv7", "Results", "Detect", "Runs", f"{os.path.splitext(os.path.basename(self.uploaded_filename))[0]}.mp4")
         video_capture = cv2.VideoCapture(output_video_path)
         success, frame = video_capture.read()
@@ -146,20 +148,35 @@ class ObjectDetectionApp:
 
         video_capture.release()
 
+        # Call the callback function if provided (to update UI)
+        if callback:
+            callback()
+
     # Get class name based on class id
     def get_class_name(self, class_id):
-        # You can implement a mapping from class id to class name here
-        class_mapping = {
-            0: "Class_A",
-            1: "Class_B",
-            # Add more class mappings as needed
-        }
-        return class_mapping.get(class_id)
+        # Class mapping for Male House Finch and Female House Finch
+        if class_id == 0:
+            return "Male House Finch"
+        elif class_id == 1:
+            return "Female House Finch"
+        else:
+            return None
 
-    # Function to delete selected image from listbox
-    def delete_image(self, images_listbox):
+    # Function to delete selected image from listbox and folder
+    def delete_image(self, images_listbox, folder_name):
         selected_index = images_listbox.curselection()
         if selected_index:
+            selected_item = images_listbox.get(selected_index)
+            file_path = os.path.join("Results", "Detected_Objects", folder_name, selected_item)
+
+            # Delete file from filesystem
+            try:
+                os.remove(file_path)
+            except OSError as e:
+                messagebox.showerror("Error", f"Error deleting file: {str(e)}")
+                return
+
+            # Delete file from Listbox
             images_listbox.delete(selected_index)
 
     # Function to move selected image to another folder
@@ -167,15 +184,52 @@ class ObjectDetectionApp:
         selected_index = images_listbox.curselection()
         if selected_index:
             selected_item = images_listbox.get(selected_index)
-            obj_class, timestamp = selected_item.split(" - ")
+
+            # Attempt to split selected_item into parts based on " - "
+            item_parts = selected_item.split(" - ")
+
+            # Check if item_parts contains at least two parts
+            if len(item_parts) < 2:
+                # Display an error message if the format is invalid
+                messagebox.showerror("Error", "Invalid selection format")
+                return
+
+            # Extract obj_class and timestamp from item_parts
+            obj_class = item_parts[0]
+            timestamp = item_parts[1]
+
+            # Prompt the user to select a destination folder
             destination_folder = filedialog.askdirectory(title="Select Destination Folder")
             if destination_folder:
                 if not os.path.exists(destination_folder):
                     os.makedirs(destination_folder)
+
+                # Move the selected item to the destination folder (replace with actual move logic)
                 print(f"Moving {selected_item} to {destination_folder}")
 
+                # Update the UI to reflect the changes (refresh Listbox contents)
+                self.update_ui()
+    def update_ui(self):
+        # Update the UI to display all files in each folder
+        folders = ["Male House Finch", "Female House Finch"]
+
+        for folder_name in folders:
+            images_listbox = getattr(self, f"{folder_name.lower().replace(' ', '_')}_listbox", None)
+            if images_listbox:
+                images_listbox.delete(0, tk.END)  # Clear existing items
+
+                # Get list of files in the folder
+                folder_path = os.path.join("Results", "Detected_Objects", folder_name)
+                if os.path.exists(folder_path) and os.path.isdir(folder_path):
+                    files = [f for f in os.listdir(folder_path) if os.path.isfile(os.path.join(folder_path, f))]
+                    for file_name in files:
+                        images_listbox.insert(tk.END, file_name)
+
+    def run(self):
+        self.root.mainloop()
 
 if __name__ == "__main__":
+
     root = tk.Tk()
     app = ObjectDetectionApp(root)
-    root.mainloop()
+    app.run()
