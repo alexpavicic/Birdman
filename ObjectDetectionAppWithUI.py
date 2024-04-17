@@ -16,7 +16,7 @@ class ObjectDetectionApp:
         self.main_frame.pack(expand=True, fill=tk.BOTH, padx=10, pady=10)
 
         # Upload Video button
-        self.upload_button = tk.Button(self.main_frame, text="Upload Folder", command=self.upload_video, bg="#4CAF50",
+        self.upload_button = tk.Button(self.main_frame, text="Upload Video", command=self.upload_video, bg="#4CAF50",
                                        fg="white", font=("Helvetica", 12, "bold"), relief=tk.RAISED)
         self.upload_button.pack(pady=20, padx=50, ipadx=20, ipady=10)
 
@@ -27,12 +27,10 @@ class ObjectDetectionApp:
         # Create frames for each folder
         self.create_folder_ui(self.detected_objects_frame, "Male House Finch")
         self.create_folder_ui(self.detected_objects_frame, "Female House Finch")
+        self.create_folder_ui(self.detected_objects_frame, "Unknown")
 
         # Video/Image source:
         self.uploaded_filename = None
-        self.uploaded_folder = None
-        self.folder_contents = None
-        self.file_save = None
 
         # Base working directory
         self.base_directory = os.getcwd()
@@ -68,29 +66,16 @@ class ObjectDetectionApp:
 
     # Function to upload video file
     def upload_video(self):
-        self.uploaded_folder = filedialog.askdirectory(mustexist=True, title="Select a Folder")  # Store the uploaded filename
-        
-        self.folder_contents = os.listdir(self.uploaded_folder)
+        self.uploaded_filename = filedialog.askopenfilename(
+            filetypes=[("Video Files", "*.mp4")])  # Store the uploaded filename
 
-
-        if "/" in self.uploaded_folder:
-            file_str = "/"
-        else:
-            file_str = "\\"
-
-        for i in self.folder_contents:
-            if ".mp4" in i:
-                self.uploaded_filename = self.uploaded_folder + file_str + i
-                self.perform_object_detection()
+        if self.uploaded_filename:
+            self.perform_object_detection()
 
     # Perform object detection
     def perform_object_detection(self):
         # Change the working directory to YOLOv7
         os.chdir('YOLOv7')
-
-        self.file_save = list(self.uploaded_filename.split("/"))
-        self.file_save = self.file_save[len(self.file_save)-1].rstrip(".mp4")
-
 
         try:
             # Now paths in detect.py will be relative to YOLOv7
@@ -104,7 +89,7 @@ class ObjectDetectionApp:
                 '--save-txt',
                 '--save-conf',
                 '--project', 'Results/Detect',
-                '--name', self.file_save
+                '--name', 'Runs'
             ]
             subprocess.run(command, check=True)
         finally:
@@ -117,11 +102,11 @@ class ObjectDetectionApp:
     # Extract frames from video and save along with text labels
 
     def extract_frames_with_labels(self, callback=None):
-        video = self.file_save + ".mp4"
-        output_video_path = os.path.join("YOLOv7", "Results", "Detect", self.file_save, str(video))
+
+        output_video_path = os.path.join("YOLOv7", "Results", "Detect", "Runs", f"{os.path.splitext(os.path.basename(self.uploaded_filename))[0]}.mp4")
         video_capture = cv2.VideoCapture(output_video_path)
         success, frame = video_capture.read()
-        dest_directory = os.path.join(self.base_directory, "Results", self.file_save)
+        dest_directory = os.path.join(self.base_directory, "Results")
         frame_count = 0
 
         while success:
@@ -131,7 +116,7 @@ class ObjectDetectionApp:
 
             # Move frame to appropriate folder based on text label
             label_filename = f"{os.path.splitext(os.path.basename(self.uploaded_filename))[0]}_{frame_count}.txt"
-            label_filepath = os.path.join("YOLOv7", "Results", "Detect", self.file_save, "labels", label_filename)
+            label_filepath = os.path.join("YOLOv7", "Results", "Detect", "Runs", "labels", label_filename)
 
             if os.path.exists(label_filepath):
                 with open(label_filepath) as label_file:
@@ -211,7 +196,8 @@ class ObjectDetectionApp:
                 return
 
             # Extract obj_class and timestamp from item_parts
-            obj_class = item_parts[0]
+            # obj_class = item_parts[0]
+            name = item_parts[0]
             timestamp = item_parts[1]
 
             # Prompt the user to select a destination folder
@@ -225,9 +211,10 @@ class ObjectDetectionApp:
 
                 # Update the UI to reflect the changes (refresh Listbox contents)
                 self.update_ui()
+
     def update_ui(self):
         # Update the UI to display all files in each folder
-        folders = ["Male House Finch", "Female House Finch"]
+        folders = ["Male House Finch", "Female House Finch", "Unknown"]
 
         for folder_name in folders:
             images_listbox = getattr(self, f"{folder_name.lower().replace(' ', '_')}_listbox", None)
