@@ -18,9 +18,11 @@
 - 1 -Update the UI
 - 2 -Separating frames and send to different folders based on the labels
 - 3 -Testing
+- 4 - Make the model works for entire folder instead of on one video at a time
 
 ## Sprint  Progress
 - 1 - Completed
-- 2 - 
-- 3 - 
+- 2 - Completed
+- 3 - Completed
+- 4 - Completed
 
