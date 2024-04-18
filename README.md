@@ -109,4 +109,6 @@ After testing, head over to "YOLOv7/runs/detect" (assuming default location) to 
 # Graphical user interface
 - Run the ObjectDetectionAppWithUI.py to launch the GUI.
 - Click the Upload Folder button to select a folder to analyze all of its contents (".mp4" files ONLY)
-- It will do the prediction and output a result selected video and a folder of text labels in the result folder.
+- It will do the prediction and output a result-selected video and a folder of text labels in the result folder.
+- It will separate the frame of the predicted video based on the text labels, and the image will be on the Results folder, and in the Results folder there will be one folder for each video
+- After it finishes detection, click the Analyze Folders to select a folder to view and update the UI
