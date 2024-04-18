@@ -1,0 +1,2 @@
+Suggestion form Cheng Yang to Precious Jones
+Add a button to change the model page, if there is no such button and leave the feature on one tag then it is hard for user to know how to change models
