@@ -25,6 +25,11 @@ class ObjectDetectionApp:
                                        fg="white", font=("Helvetica", 12, "bold"), relief=tk.RAISED)
         self.upload_button.pack(pady=20, padx=50, ipadx=20, ipady=10)
 
+        # Set Custom confidence 
+        self.upload_button = tk.Button(self.main_frame, text="Set Confidence", command=self.confidence_level, bg="#4CAF50",
+                                       fg="white", font=("Helvetica", 12, "bold"), relief=tk.RAISED)
+        self.upload_button.pack(pady=20, padx=50, ipadx=20, ipady=10)
+
         # Detected Objects section
         self.detected_objects_frame = tk.Frame(self.main_frame, bg="#f0f0f0")  # Set background color
         self.detected_objects_frame.pack(expand=True, fill=tk.BOTH, pady=10)
@@ -33,6 +38,9 @@ class ObjectDetectionApp:
         self.create_folder_ui(self.detected_objects_frame, "Male House Finch")
         self.create_folder_ui(self.detected_objects_frame, "Female House Finch")
         self.create_folder_ui(self.detected_objects_frame, "Unknown")
+
+        # default confidence
+        self.custom_confidence = "0.5"
 
         # Video/Image source:
         self.uploaded_filename = None
@@ -73,19 +81,35 @@ class ObjectDetectionApp:
     # Function to upload video file
     def upload_folder(self):
         self.uploaded_folder = filedialog.askdirectory(mustexist=True, title="Select a Folder")  # Store the uploaded folder
-        
+       
         self.folder_contents = os.listdir(self.uploaded_folder)
-
-
-        if "/" in self.uploaded_folder:
-            file_str = "/"
-        else:
-            file_str = "\\"
 
         for i in self.folder_contents:
             if ".mp4" in i:
-                self.uploaded_filename = self.uploaded_folder + file_str + i
+                # self.uploaded_filename = self.uploaded_folder + file_str + i
+                self.uploaded_filename = os.path.join(self.uploaded_folder, i)
                 self.perform_object_detection()
+
+    def confidence_level(self):
+        # User input for custom confidence level
+        def display_message():
+            self.custom_confidence = entry.get()
+            message_label.configure(text=f"Confidence set to:{self.custom_confidence}!")
+
+        # Create the main window
+        window = tk.Tk()
+        window.title("Set Custom Confidence between 0.0 - 1.0")
+
+        # Create an Entry widget
+        entry = tk.Entry(window, width=30)
+        entry.pack()
+        # Create a button to display the welcome message
+        button = tk.Button(window, text="Submit", command=display_message)
+        button.pack()
+
+        # Message Label
+        message_label = tk.Label(window, text="")
+        message_label.pack()
 
     # Perform object detection
     def perform_object_detection(self):
@@ -95,13 +119,12 @@ class ObjectDetectionApp:
         self.file_save = list(self.uploaded_filename.split("/"))
         self.file_save = self.file_save[len(self.file_save)-1].rstrip(".mp4")
 
-
         try:
             # Now paths in detect.py will be relative to YOLOv7
             command = [
                 'python3', 'detect.py',
-                '--weights', 'weights/best_v5.pt',
-                '--conf', '0.5',
+                '--weights', 'weights/house_finch.pt',
+                '--conf', self.custom_confidence,
                 '--img-size', '640',
                 '--source', self.uploaded_filename,  # Assuming filename is an absolute path
                 '--no-trace',
@@ -117,16 +140,26 @@ class ObjectDetectionApp:
 
         # After object detection, extract frames and update UI
         self.extract_frames_with_labels(self.update_ui)
+        self.preserve_labels(self.update_ui)
 
     # Extract frames from video and save along with text labels
 
     def extract_frames_with_labels(self, callback=None):
 
         video = self.file_save + ".mp4"
-        output_video_path = os.path.join("YOLOv7", "Results", "Detect", self.file_save, str(video))
+        analyze_output = list(os.listdir(os.path.join(self.base_directory, "YOLOv7", "Results", "Detect")))
+        filter_analyze_output = len([i for i in analyze_output if self.file_save in i])
+
+        if filter_analyze_output > 1:
+            video_version = self.file_save + str(filter_analyze_output)
+
+        else:
+            video_version = self.file_save
+
+        output_video_path = os.path.join("YOLOv7", "Results", "Detect", video_version, str(video))
         video_capture = cv2.VideoCapture(output_video_path)
         success, frame = video_capture.read()
-        dest_directory = os.path.join(self.base_directory, "Results", self.file_save)
+        dest_directory = os.path.join(self.base_directory, "Results", video_version)
         frame_count = 0
 
         while success:
@@ -136,7 +169,7 @@ class ObjectDetectionApp:
 
             # Move frame to appropriate folder based on text label
             label_filename = f"{os.path.splitext(os.path.basename(self.uploaded_filename))[0]}_{frame_count}.txt"
-            label_filepath = os.path.join("YOLOv7", "Results", "Detect", self.file_save, "labels", label_filename)
+            label_filepath = os.path.join("YOLOv7", "Results", "Detect", video_version, "labels", label_filename)
 
             if os.path.exists(label_filepath):
                 with open(label_filepath) as label_file:
@@ -167,24 +200,50 @@ class ObjectDetectionApp:
 
             success, frame = video_capture.read()
 
-        # last check
+        # last check for bug
         base_dir_contents = os.listdir(self.base_directory)
         for i in base_dir_contents:
             if ".jpg" in i:
 
-                results_dir_contents = os.listdir(os.path.join(self.base_directory, "Results"))
-                for j in results_dir_contents:
-                    if j in i:
-                        print("\t\tWorst Case\n\n")
-                        image = os.path.join(self.base_directory, i)
-                        dest_dir = os.path.join(self.base_directory, "Results", j, "Detected_Objects", "Unknown", i)
-                        os.rename(image, dest_dir)
+                image = os.path.join(self.base_directory, i)
+                dest_dir = os.path.join(self.base_directory, "Results", video_version, "Detected_Objects", "Unknown", i)
+                os.rename(image, dest_dir)
 
         video_capture.release()
+
+        # remove video once analysis has finished
+        os.remove(output_video_path)
 
         # Call the callback function if provided (to update UI)
         if callback:
             callback()
+
+    def preserve_labels(self, callback=None):
+        # Moves the labels from the recently analyzed video to Results folder
+        analyze_output = list(os.listdir(os.path.join(self.base_directory, "YOLOv7", "Results", "Detect")))
+        filter_analyze_output = len([i for i in analyze_output if self.file_save in i])
+
+        if filter_analyze_output > 1:
+            video_version = self.file_save + str(filter_analyze_output)
+
+        else:
+            video_version = self.file_save
+
+        labels = os.listdir(os.path.join("YOLOv7", "Results", "Detect", video_version, "labels"))
+
+        for label in labels:
+
+            labl = os.path.join("YOLOv7", "Results", "Detect", video_version, "labels", label)
+            dest_dir = os.path.join("Results", video_version, "Detected_Objects", "Label")
+
+            if not os.path.exists(dest_dir):
+                os.makedirs(dest_dir, exist_ok=True)
+
+            os.rename(labl, os.path.join(dest_dir, label))
+
+        labl_dir = os.path.join("YOLOv7", "Results", "Detect", video_version, "labels")
+        os.rmdir(labl_dir)
+
 
     # Get class name based on class id
     def get_class_name(self, class_id):
@@ -247,7 +306,7 @@ class ObjectDetectionApp:
 
     def choose_video(self):
         # Allows user to choose video to analyze frames
-        self.chosen_vid = filedialog.askdirectory(mustexist=True, initialdir=os.path.join(self.base_directory, "Results"), title="Select a Folder to Analyze")  # Store the uploaded folder
+        self.chosen_vid = filedialog.askdirectory(mustexist=True, initialdir=os.path.join(self.base_directory, "Results"), title="Select a Folder to Analyze")
         folders = ["Male House Finch", "Female House Finch", "Unknown"]
 
         for folder_name in folders:
