@@ -15,8 +15,13 @@ class ObjectDetectionApp:
         self.main_frame = tk.Frame(self.root, bg="#f0f0f0")  # Set background color
         self.main_frame.pack(expand=True, fill=tk.BOTH, padx=10, pady=10)
 
-        # Upload Video button
-        self.upload_button = tk.Button(self.main_frame, text="Upload Video", command=self.upload_video, bg="#4CAF50",
+        # Upload Folder button
+        self.upload_button = tk.Button(self.main_frame, text="Upload Folder", command=self.upload_folder, bg="#4CAF50",
+                                       fg="white", font=("Helvetica", 12, "bold"), relief=tk.RAISED)
+        self.upload_button.pack(pady=20, padx=50, ipadx=20, ipady=10)
+
+        # Analyze Folder button
+        self.upload_button = tk.Button(self.main_frame, text="Analyze Folder", command=self.choose_video, bg="#4CAF50",
                                        fg="white", font=("Helvetica", 12, "bold"), relief=tk.RAISED)
         self.upload_button.pack(pady=20, padx=50, ipadx=20, ipady=10)
 
@@ -31,6 +36,7 @@ class ObjectDetectionApp:
 
         # Video/Image source:
         self.uploaded_filename = None
+        self.chosen_vid = None
 
         # Base working directory
         self.base_directory = os.getcwd()
@@ -65,17 +71,30 @@ class ObjectDetectionApp:
         setattr(self, f"{folder_name.lower().replace(' ', '_')}_listbox", images_listbox)
 
     # Function to upload video file
-    def upload_video(self):
-        self.uploaded_filename = filedialog.askopenfilename(
-            filetypes=[("Video Files", "*.mp4")])  # Store the uploaded filename
+    def upload_folder(self):
+        self.uploaded_folder = filedialog.askdirectory(mustexist=True, title="Select a Folder")  # Store the uploaded folder
+        
+        self.folder_contents = os.listdir(self.uploaded_folder)
 
-        if self.uploaded_filename:
-            self.perform_object_detection()
+
+        if "/" in self.uploaded_folder:
+            file_str = "/"
+        else:
+            file_str = "\\"
+
+        for i in self.folder_contents:
+            if ".mp4" in i:
+                self.uploaded_filename = self.uploaded_folder + file_str + i
+                self.perform_object_detection()
 
     # Perform object detection
     def perform_object_detection(self):
         # Change the working directory to YOLOv7
         os.chdir('YOLOv7')
+
+        self.file_save = list(self.uploaded_filename.split("/"))
+        self.file_save = self.file_save[len(self.file_save)-1].rstrip(".mp4")
+
 
         try:
             # Now paths in detect.py will be relative to YOLOv7
@@ -89,7 +108,7 @@ class ObjectDetectionApp:
                 '--save-txt',
                 '--save-conf',
                 '--project', 'Results/Detect',
-                '--name', 'Runs'
+                '--name', self.file_save
             ]
             subprocess.run(command, check=True)
         finally:
@@ -103,10 +122,11 @@ class ObjectDetectionApp:
 
     def extract_frames_with_labels(self, callback=None):
 
-        output_video_path = os.path.join("YOLOv7", "Results", "Detect", "Runs", f"{os.path.splitext(os.path.basename(self.uploaded_filename))[0]}.mp4")
+        video = self.file_save + ".mp4"
+        output_video_path = os.path.join("YOLOv7", "Results", "Detect", self.file_save, str(video))
         video_capture = cv2.VideoCapture(output_video_path)
         success, frame = video_capture.read()
-        dest_directory = os.path.join(self.base_directory, "Results")
+        dest_directory = os.path.join(self.base_directory, "Results", self.file_save)
         frame_count = 0
 
         while success:
@@ -116,7 +136,7 @@ class ObjectDetectionApp:
 
             # Move frame to appropriate folder based on text label
             label_filename = f"{os.path.splitext(os.path.basename(self.uploaded_filename))[0]}_{frame_count}.txt"
-            label_filepath = os.path.join("YOLOv7", "Results", "Detect", "Runs", "labels", label_filename)
+            label_filepath = os.path.join("YOLOv7", "Results", "Detect", self.file_save, "labels", label_filename)
 
             if os.path.exists(label_filepath):
                 with open(label_filepath) as label_file:
@@ -147,6 +167,19 @@ class ObjectDetectionApp:
 
             success, frame = video_capture.read()
 
+        # last check
+        base_dir_contents = os.listdir(self.base_directory)
+        for i in base_dir_contents:
+            if ".jpg" in i:
+
+                results_dir_contents = os.listdir(os.path.join(self.base_directory, "Results"))
+                for j in results_dir_contents:
+                    if j in i:
+                        print("\t\tWorst Case\n\n")
+                        image = os.path.join(self.base_directory, i)
+                        dest_dir = os.path.join(self.base_directory, "Results", j, "Detected_Objects", "Unknown", i)
+                        os.rename(image, dest_dir)
+
         video_capture.release()
 
         # Call the callback function if provided (to update UI)
@@ -168,7 +201,7 @@ class ObjectDetectionApp:
         selected_index = images_listbox.curselection()
         if selected_index:
             selected_item = images_listbox.get(selected_index)
-            file_path = os.path.join("Results", "Detected_Objects", folder_name, selected_item)
+            file_path = os.path.join(self.chosen_vid, "Detected_Objects", folder_name, selected_item)
 
             # Delete file from filesystem
             try:
@@ -211,6 +244,22 @@ class ObjectDetectionApp:
 
                 # Update the UI to reflect the changes (refresh Listbox contents)
                 self.update_ui()
+
+    def choose_video(self):
+        # Allows user to choose video to analyze frames
+        self.chosen_vid = filedialog.askdirectory(mustexist=True, initialdir=os.path.join(self.base_directory, "Results"), title="Select a Folder to Analyze")  # Store the uploaded folder
+        folders = ["Male House Finch", "Female House Finch", "Unknown"]
+
+        for folder_name in folders:
+            images_listbox = getattr(self, f"{folder_name.lower().replace(' ', '_')}_listbox", None)
+            if images_listbox:
+                images_listbox.delete(0, tk.END)  # Clear existing items
+                # Get list of files in the folder
+                folder_path = os.path.join(self.chosen_vid, "Detected_Objects", folder_name)
+                if os.path.exists(folder_path) and os.path.isdir(folder_path):
+                    files = [f for f in os.listdir(folder_path) if os.path.isfile(os.path.join(folder_path, f))]
+                    for file_name in files:
+                        images_listbox.insert(tk.END, file_name)
 
     def update_ui(self):
         # Update the UI to display all files in each folder
