@@ -19,12 +19,12 @@
 - 2 -Separating frames and send to different folders based on the labels
 - 3 -Testing
 - 4 - Make the model works for entire folder instead of on one video at a time
-- 5 - Set confidence level
+
 
 ## Sprint  Progress
 - 1 - Completed
 - 2 - Completed
 - 3 - Completed
 - 4 - Completed
-- 5 - Completed
+
 
