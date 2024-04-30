@@ -1,4 +1,6 @@
 # Running Birdman's YOLOv7:
+# Overview
+This project focuses on developing an object detection system using Python and the YOLO (You Only Look Once) model specifically to detect House Finches in videos. The goal is to implement a robust solution capable of accurately identifying House Finches in video footage, which can be applied to wildlife monitoring, environmental studies, and birdwatching.
 
 ## Pre-Requisite:
 Create a python virtual environment for better version control
